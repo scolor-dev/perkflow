@@ -3,6 +3,7 @@ import { useDataDragonContext } from "../contexts/DataDragonContext";
 import { useChampionContext } from "../contexts/ChampionContext";
 import type { RunePage, ChampionRunes } from "../types";
 import { RuneTreeSelector } from "./RuneTreeSelector";
+import { RuneSharePanel } from "./RuneSharePanel";
 import { saveChampionRunes, getChampionRunes, deleteChampionRunes, applyRunesManually } from "../hooks/useLcu";
 
 const blank = (): Partial<RunePage> => ({
@@ -128,6 +129,10 @@ export function RuneEditor() {
       </div>
       <RuneTreeSelector runeStyles={runeStyles} runeIconUrl={runeIconUrl}
         value={cur} onChange={(p) => updatePage(tab, p)} />
+      <RuneSharePanel
+        currentPage={cur}
+        onImport={(p) => updatePage(tab, { ...cur, ...p })}
+      />
     </div>
   );
 }
