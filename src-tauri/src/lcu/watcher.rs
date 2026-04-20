@@ -177,8 +177,10 @@ fn find_champ_in_team(data: &Value, team_key: &str, cell_id: i64) -> Option<(i64
         e.get("cellId").and_then(|id| id.as_i64()) == Some(cell_id)
     })?;
 
-    let champ_id = entry.get("championId")
+    let champ_id = entry.get("championPickIntent")
         .and_then(|id| id.as_i64())
+        .filter(|&id| id > 0)
+        .or_else(|| entry.get("championId").and_then(|id| id.as_i64()).filter(|&id| id > 0))
         .unwrap_or(0);
     if champ_id <= 0 { return None; }
 
