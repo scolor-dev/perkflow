@@ -3,12 +3,14 @@ import { listen } from "@tauri-apps/api/event";
 import { applyRunesManually, getChampionRunes } from "../hooks/useLcu";
 import { useDataDragonContext } from "../contexts/DataDragonContext";
 import { useLcuContext } from "../contexts/LcuContext";
-import type { ChampionRunes } from "../types";
+import type { ChampionRunes, Lane } from "../types";
+import { LANES } from "../types";
 
 export function ChampSelectPanel() {
   const { getChampionById, champIconUrl } = useDataDragonContext();
   const { connected: lcuConnected } = useLcuContext();
   const [championId, setChampionId] = useState<number | null>(null);
+  const [detectedLane, setDetectedLane] = useState<Lane | null>(null);
   const [runes, setRunes] = useState<ChampionRunes | null>(null);
   const [applying, setApplying] = useState(false);
   const [lastResult, setLastResult] = useState<"ok" | "err" | null>(null);
@@ -16,20 +18,24 @@ export function ChampSelectPanel() {
 
   useEffect(() => {
     const unlistens = Promise.all([
-      listen<{ championId: number }>("champion-changed", async (e) => {
+      listen<{ championId: number; lane?: Lane }>("champion-changed", async (e) => {
         const id = e.payload.championId;
+        const lane = e.payload.lane ?? null;
         setChampionId(id);
+        setDetectedLane(lane);
         setLastResult(null);
         setErrMsg("");
-        const saved = await getChampionRunes(id).catch(() => null);
+        // レーンあり → 完全一致で検索、なければフォールバックはバックエンドが担当
+        const saved = await getChampionRunes(id, lane).catch(() => null);
         setRunes(saved);
       }),
       listen("champion-cleared", () => {
         setChampionId(null);
+        setDetectedLane(null);
         setRunes(null);
         setLastResult(null);
       }),
-      listen("runes-applied", () => {
+      listen<{ lane?: Lane }>("runes-applied", () => {
         setLastResult("ok");
         setApplying(false);
       }),
@@ -47,7 +53,7 @@ export function ChampSelectPanel() {
     setApplying(true);
     setLastResult(null);
     try {
-      await applyRunesManually(championId);
+      await applyRunesManually(championId, detectedLane);
       setLastResult("ok");
     } catch (e) {
       setErrMsg(String(e));
@@ -58,6 +64,9 @@ export function ChampSelectPanel() {
   };
 
   const champion = championId ? getChampionById(championId) : null;
+  const laneLabel = detectedLane
+    ? LANES.find((l) => l.value === detectedLane)?.label ?? detectedLane
+    : null;
 
   if (!lcuConnected) {
     return (
@@ -87,9 +96,10 @@ export function ChampSelectPanel() {
         <div className="cs-champ-info">
           <div className="cs-champ-name">{champion?.name ?? `ID: ${championId}`}</div>
           <div className="cs-champ-sub">
+            {laneLabel && <span className="cs-lane-badge">{laneLabel}</span>}
             {runes
-              ? `${runes.pages.length} page${runes.pages.length > 1 ? "s" : ""} registered`
-              : "No runes registered"}
+              ? ` ${runes.pages.length} page${runes.pages.length > 1 ? "s" : ""} registered`
+              : " No runes registered"}
           </div>
         </div>
         {lastResult === "ok" && (
@@ -126,7 +136,10 @@ export function ChampSelectPanel() {
         </button>
       ) : (
         <div className="cs-no-runes">
-          このチャンピオンのルーンが未登録です。<br />
+          {laneLabel
+            ? `${champion?.name ?? ""} (${laneLabel}) のルーンが未登録です。`
+            : `このチャンピオンのルーンが未登録です。`}
+          <br />
           Editorタブで登録してください。
         </div>
       )}
