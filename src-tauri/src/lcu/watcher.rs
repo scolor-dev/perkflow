@@ -18,8 +18,19 @@ fn lane_to_id(lane: Option<&str>) -> i64 {
         Some("mid") => 3,
         Some("bot") => 4,
         Some("support") => 5,
+        Some("aram") => 6,
+        Some("other") => 7,
         _ => 0,
     }
+}
+
+async fn get_game_mode(client: &LcuClient) -> Option<String> {
+    let session = client.get("/lol-gameflow/v1/session").await.ok()?;
+    session.get("gameData")
+        .and_then(|g| g.get("queue"))
+        .and_then(|q| q.get("gameMode"))
+        .and_then(|m| m.as_str())
+        .map(|s| s.to_uppercase())
 }
 
 fn lcu_position_to_lane(pos: &str) -> Option<String> {
@@ -130,7 +141,16 @@ async fn handle_event(event: &Value, client: &LcuClient, handle: &AppHandle) {
         return;
     }
 
-    let lane_id = lane_to_id(lane.as_deref());
+    let game_mode = get_game_mode(client).await;
+    let effective_lane = if game_mode.as_deref() == Some("ARAM") {
+        Some("aram".to_string())
+    } else if lane.is_none() {
+        Some("other".to_string())
+    } else {
+        lane
+    };
+
+    let lane_id = lane_to_id(effective_lane.as_deref());
     let last_champ = LAST_CHAMP.load(Ordering::Relaxed);
     let last_lane = LAST_LANE.load(Ordering::Relaxed);
 
@@ -141,15 +161,16 @@ async fn handle_event(event: &Value, client: &LcuClient, handle: &AppHandle) {
     LAST_CHAMP.store(champ_id, Ordering::Relaxed);
     LAST_LANE.store(lane_id, Ordering::Relaxed);
 
-    log::info!("Champion changed: {}:{:?} -> {}:{:?}", last_champ, last_lane, champ_id, lane);
+    log::info!("Champion changed: {}:{:?} -> {}:{:?} (mode={:?})", last_champ, last_lane, champ_id, effective_lane, game_mode);
 
     let _ = handle.emit("champion-changed", serde_json::json!({
         "championId": champ_id,
-        "lane": lane,
+        "lane": effective_lane,
+        "gameMode": game_mode,
     }));
 
-    if let Some(runes) = get_saved_runes(handle, champ_id, lane.as_deref()) {
-        log::info!("Auto-applying runes for champion={} lane={:?}", champ_id, lane);
+    if let Some(runes) = get_saved_runes(handle, champ_id, effective_lane.as_deref()) {
+        log::info!("Auto-applying runes for champion={} lane={:?}", champ_id, effective_lane);
         match apply_champion_runes(client, &runes).await {
             Ok(_) => {
                 let _ = handle.emit("runes-applied", serde_json::json!({
@@ -167,7 +188,7 @@ async fn handle_event(event: &Value, client: &LcuClient, handle: &AppHandle) {
         }
     } else {
         let _ = handle.emit("runes-not-found",
-            serde_json::json!({ "championId": champ_id, "lane": lane }));
+            serde_json::json!({ "championId": champ_id, "lane": effective_lane }));
     }
 }
 

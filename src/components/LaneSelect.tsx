@@ -40,5 +40,7 @@ function getLaneIcon(lane: Lane): string {
     case "mid": return "◆";
     case "bot": return "⬇";
     case "support": return "♡";
+    case "aram": return "⚡";
+    case "other": return "…";
   }
 }
