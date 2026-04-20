@@ -19,6 +19,8 @@ pub struct ChampionRunes {
     pub champion_id: i64,
     #[serde(rename = "championName")]
     pub champion_name: String,
+    #[serde(default)]
+    pub lane: Option<String>,
     pub pages: Vec<RunePage>,
 }
 

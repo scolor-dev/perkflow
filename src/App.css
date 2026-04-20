@@ -311,3 +311,16 @@ button.btn-share-copy, button.btn-share-parse, button.btn-share-load {
 .btn-share-parse:disabled { opacity: .4; cursor: not-allowed; }
 .btn-share-load  { background: var(--goldd); border-color: var(--gold); color: var(--goldl); flex-shrink: 0; }
 .btn-share-load:hover { background: var(--gold); color: #090910; }
+/* Lane Select */
+.lane-select{display:flex;gap:4px;margin-bottom:12px;padding:8px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--bd)}
+.lane-btn{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;padding:6px 4px;background:var(--bg3);border:1px solid var(--bd);border-radius:4px;cursor:pointer;transition:all .13s;position:relative;color:var(--tx2)}
+.lane-btn:hover{border-color:var(--bdb);color:var(--tx)}
+.lane-btn.active{border-color:var(--gold);background:rgba(200,155,60,.12);color:var(--goldl)}
+.lane-btn.saved{border-color:var(--ok)}
+.lane-btn.active.saved{border-color:var(--gold)}
+.lane-icon{font-size:14px;line-height:1}
+.lane-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.lane-saved-dot{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--ok)}
+
+/* ChampSelectPanel lane badge */
+.cs-lane-badge{display:inline-block;padding:1px 6px;background:rgba(200,155,60,.2);color:var(--goldl);border-radius:3px;font-size:10px;font-weight:600;margin-right:4px}
