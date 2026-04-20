@@ -1,18 +1,21 @@
-﻿import { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useDataDragonContext } from "../contexts/DataDragonContext";
+import { useChampionContext } from "../contexts/ChampionContext";
 import type { Champion } from "../hooks/useDataDragon";
-import type { ChampionRunes } from "../types";
 
-interface Props {
-  champions: Champion[];
-  savedRunes: ChampionRunes[];
-  champIconUrl: (c: Champion) => string;
-  selected: Champion | null;
-  onSelect: (c: Champion) => void;
-}
-
-export function ChampionSelect({ champions, savedRunes, champIconUrl, selected, onSelect }: Props) {
+export function ChampionSelect() {
+  const { champions, champIconUrl } = useDataDragonContext();
+  const { savedRunes, selectedChampion, setSelectedChampion } = useChampionContext();
   const [search, setSearch] = useState("");
-  const savedIds = useMemo(() => new Set(savedRunes.map((r) => r.championId)), [savedRunes]);
+
+  // チャンピオンIDごとの登録レーン数
+  const savedLaneCounts = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const r of savedRunes) {
+      counts.set(r.championId, (counts.get(r.championId) ?? 0) + 1);
+    }
+    return counts;
+  }, [savedRunes]);
 
   const filtered = useMemo(
     () => champions.filter((c) =>
@@ -22,8 +25,8 @@ export function ChampionSelect({ champions, savedRunes, champIconUrl, selected, 
     [champions, search]
   );
 
-  const savedChamps = !search ? champions.filter((c) => savedIds.has(parseInt(c.key))) : [];
-  const restChamps = filtered.filter((c) => search || !savedIds.has(parseInt(c.key)));
+  const savedChamps = !search ? champions.filter((c) => savedLaneCounts.has(parseInt(c.key))) : [];
+  const restChamps = filtered.filter((c) => search || !savedLaneCounts.has(parseInt(c.key)));
 
   return (
     <div className="champ-select">
@@ -38,7 +41,9 @@ export function ChampionSelect({ champions, savedRunes, champIconUrl, selected, 
           <div className="champ-grid">
             {savedChamps.map((c) => (
               <ChampCard key={c.key} champ={c} url={champIconUrl(c)}
-                selected={selected?.key === c.key} saved onClick={() => onSelect(c)} />
+                selected={selectedChampion?.key === c.key}
+                laneCount={savedLaneCounts.get(parseInt(c.key)) ?? 0}
+                onClick={() => setSelectedChampion(c)} />
             ))}
           </div>
           <div className="section-label">All Champions</div>
@@ -47,8 +52,9 @@ export function ChampionSelect({ champions, savedRunes, champIconUrl, selected, 
       <div className="champ-grid">
         {restChamps.map((c) => (
           <ChampCard key={c.key} champ={c} url={champIconUrl(c)}
-            selected={selected?.key === c.key} saved={savedIds.has(parseInt(c.key))}
-            onClick={() => onSelect(c)} />
+            selected={selectedChampion?.key === c.key}
+            laneCount={savedLaneCounts.get(parseInt(c.key)) ?? 0}
+            onClick={() => setSelectedChampion(c)} />
         ))}
       </div>
       {filtered.length === 0 && <p className="no-results">Not found</p>}
@@ -56,13 +62,17 @@ export function ChampionSelect({ champions, savedRunes, champIconUrl, selected, 
   );
 }
 
-function ChampCard({ champ, url, selected, saved, onClick }: {
-  champ: Champion; url: string; selected: boolean; saved: boolean; onClick: () => void;
+function ChampCard({ champ, url, selected, laneCount, onClick }: {
+  champ: Champion; url: string; selected: boolean; laneCount: number; onClick: () => void;
 }) {
   return (
     <button className={`champ-card ${selected ? "selected" : ""}`} onClick={onClick} title={champ.name}>
       <img src={url} alt={champ.name} />
-      {saved && <span className="saved-badge">v</span>}
+      {laneCount > 0 && (
+        <span className="saved-badge" title={`${laneCount} lane${laneCount > 1 ? "s" : ""} registered`}>
+          {laneCount}
+        </span>
+      )}
       <span className="champ-name">{champ.name}</span>
     </button>
   );

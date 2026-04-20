@@ -236,3 +236,91 @@ button.btn-save,button.btn-del,button.btn-apply{padding:6px 16px;border-radius:v
 }
 .cs-auto-badge.ok  { background: #0f2216; color: var(--ok);  border: 1px solid var(--ok); }
 .cs-auto-badge.err { background: #1e0c0c; color: #f08080;    border: 1px solid var(--err); }
+
+/* ── RuneSharePanel ── */
+.share-panel {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bd);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.share-section { display: flex; flex-direction: column; gap: 7px; }
+.share-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--txm); }
+.share-export-row { display: flex; align-items: center; gap: 8px; }
+.share-code {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--bg2);
+  border: 1px solid var(--bdb);
+  border-radius: var(--r);
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--tx2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.share-hint { font-size: 11px; color: var(--txm); }
+.share-import-row { display: flex; gap: 6px; }
+.share-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  color: var(--tx);
+  font-size: 12px;
+  outline: none;
+  transition: border-color .13s;
+}
+.share-input:focus { border-color: var(--bdb); }
+.share-input::placeholder { color: var(--txm); }
+.share-error { font-size: 11px; color: #f08080; padding: 5px 8px; background: #1e0c0c; border-radius: 4px; }
+.share-preview {
+  padding: 10px 12px;
+  background: var(--bg2);
+  border: 1px solid var(--bdb);
+  border-radius: var(--r);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.share-preview-trees { display: flex; align-items: center; gap: 7px; flex: 1; flex-wrap: wrap; }
+.share-tree { font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 3px; }
+.share-tree.primary { background: rgba(200,155,60,.15); color: var(--goldl); }
+.share-tree.sub     { background: var(--bg3); color: var(--tx2); }
+.share-tree-sep { color: var(--txm); font-size: 12px; }
+.share-perk-count { font-size: 11px; color: var(--txm); margin-left: auto; }
+
+button.btn-share-copy, button.btn-share-parse, button.btn-share-load {
+  padding: 5px 12px;
+  border-radius: var(--r);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all .13s;
+  white-space: nowrap;
+}
+.btn-share-copy  { background: var(--bg3); border-color: var(--bdb); color: var(--tx2); }
+.btn-share-copy:hover { border-color: var(--gold); color: var(--goldl); }
+.btn-share-parse { background: rgba(74,127,212,.12); border-color: var(--inf); color: #7eb8f7; }
+.btn-share-parse:hover:not(:disabled) { background: rgba(74,127,212,.25); }
+.btn-share-parse:disabled { opacity: .4; cursor: not-allowed; }
+.btn-share-load  { background: var(--goldd); border-color: var(--gold); color: var(--goldl); flex-shrink: 0; }
+.btn-share-load:hover { background: var(--gold); color: #090910; }
+/* Lane Select */
+.lane-select{display:flex;gap:4px;margin-bottom:12px;padding:8px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--bd)}
+.lane-btn{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;padding:6px 4px;background:var(--bg3);border:1px solid var(--bd);border-radius:4px;cursor:pointer;transition:all .13s;position:relative;color:var(--tx2)}
+.lane-btn:hover{border-color:var(--bdb);color:var(--tx)}
+.lane-btn.active{border-color:var(--gold);background:rgba(200,155,60,.12);color:var(--goldl)}
+.lane-btn.saved{border-color:var(--ok)}
+.lane-btn.active.saved{border-color:var(--gold)}
+.lane-icon{font-size:14px;line-height:1}
+.lane-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.lane-saved-dot{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--ok)}
+
+/* ChampSelectPanel lane badge */
+.cs-lane-badge{display:inline-block;padding:1px 6px;background:rgba(200,155,60,.2);color:var(--goldl);border-radius:3px;font-size:10px;font-weight:600;margin-right:4px}

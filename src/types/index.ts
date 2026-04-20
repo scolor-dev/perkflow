@@ -5,9 +5,22 @@
   selectedPerkIds: number[];
 }
 
+export type Lane = "top" | "jungle" | "mid" | "bot" | "support" | "aram" | "other";
+
+export const LANES: { value: Lane; label: string; abbr: string }[] = [
+  { value: "top", label: "Top", abbr: "TOP" },
+  { value: "jungle", label: "Jungle", abbr: "JGL" },
+  { value: "mid", label: "Mid", abbr: "MID" },
+  { value: "bot", label: "Bot", abbr: "BOT" },
+  { value: "support", label: "Support", abbr: "SUP" },
+  { value: "aram", label: "ARAM", abbr: "ARAM" },
+  { value: "other", label: "その他", abbr: "OTH" },
+];
+
 export interface ChampionRunes {
   championId: number;
   championName: string;
+  lane?: Lane;
   pages: RunePage[];
 }
 

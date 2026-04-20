@@ -1,4 +1,4 @@
-﻿use std::sync::atomic::{AtomicI64, Ordering};
+use std::sync::atomic::{AtomicI64, Ordering};
 use futures_util::{SinkExt, StreamExt};
 use serde_json::Value;
 use tauri::{AppHandle, Emitter};
@@ -9,6 +9,40 @@ use super::runes::apply_champion_runes;
 use crate::commands::get_saved_runes;
 
 static LAST_CHAMP: AtomicI64 = AtomicI64::new(0);
+static LAST_LANE: AtomicI64 = AtomicI64::new(0);
+
+fn lane_to_id(lane: Option<&str>) -> i64 {
+    match lane {
+        Some("top") => 1,
+        Some("jungle") => 2,
+        Some("mid") => 3,
+        Some("bot") => 4,
+        Some("support") => 5,
+        Some("aram") => 6,
+        Some("other") => 7,
+        _ => 0,
+    }
+}
+
+async fn get_game_mode(client: &LcuClient) -> Option<String> {
+    let session = client.get("/lol-gameflow/v1/session").await.ok()?;
+    session.get("gameData")
+        .and_then(|g| g.get("queue"))
+        .and_then(|q| q.get("gameMode"))
+        .and_then(|m| m.as_str())
+        .map(|s| s.to_uppercase())
+}
+
+fn lcu_position_to_lane(pos: &str) -> Option<String> {
+    match pos.to_uppercase().as_str() {
+        "TOP" => Some("top".to_string()),
+        "JUNGLE" => Some("jungle".to_string()),
+        "MIDDLE" | "MID" => Some("mid".to_string()),
+        "BOTTOM" | "BOT" | "ADC" => Some("bot".to_string()),
+        "UTILITY" | "SUPPORT" | "SUP" => Some("support".to_string()),
+        _ => None,
+    }
+}
 
 pub async fn start_watcher(handle: AppHandle) {
     loop {
@@ -22,8 +56,8 @@ pub async fn start_watcher(handle: AppHandle) {
                 }
                 let _ = handle.emit("lcu-status",
                     serde_json::json!({ "connected": false }));
-                // Champion Select 終了時にリセット
                 LAST_CHAMP.store(0, Ordering::Relaxed);
+                LAST_LANE.store(0, Ordering::Relaxed);
             }
             Err(_) => {}
         }
@@ -60,7 +94,6 @@ async fn run_ws(
     ).await?;
     let (mut write, mut read) = ws.split();
 
-    // Champion Select セッションを購読
     write.send(Message::Text(
         serde_json::json!([5, "OnJsonApiEvent_lol-champ-select_v1_session"])
             .to_string().into()
@@ -81,53 +114,69 @@ async fn run_ws(
 }
 
 async fn handle_event(event: &Value, client: &LcuClient, handle: &AppHandle) {
-    // イベント形式: [8, "OnJsonApiEvent_...", { eventType, uri, data }]
     let data = match event.get(2).and_then(|v| v.get("data")) {
         Some(d) => d,
         None => return,
     };
 
-    // localPlayerCellId で自分のセルを特定（サモナーID取得不要）
     let my_cell_id = match data.get("localPlayerCellId").and_then(|v| v.as_i64()) {
         Some(id) => id,
         None => return,
     };
 
-    // myTeam と theirTeam 両方から自分のセルを探す
-    let champ_id = find_champ_in_team(data, "myTeam", my_cell_id)
-        .or_else(|| find_champ_in_team(data, "theirTeam", my_cell_id))
-        .unwrap_or(0);
+    let result = find_champ_in_team(data, "myTeam", my_cell_id)
+        .or_else(|| find_champ_in_team(data, "theirTeam", my_cell_id));
+
+    let (champ_id, lane) = match result {
+        Some(r) => r,
+        None => (0, None),
+    };
 
     if champ_id == 0 {
-        // キャラ未選択（ホバー前）
-        // IDが0に戻った = Champion Select を出た
         if LAST_CHAMP.load(Ordering::Relaxed) != 0 {
             LAST_CHAMP.store(0, Ordering::Relaxed);
+            LAST_LANE.store(0, Ordering::Relaxed);
             let _ = handle.emit("champion-cleared", serde_json::json!({}));
         }
         return;
     }
 
-    // 同じキャラが連続で来た場合はスキップ
-    let last = LAST_CHAMP.swap(champ_id, Ordering::Relaxed);
-    if last == champ_id {
+    let game_mode = get_game_mode(client).await;
+    let effective_lane = if game_mode.as_deref() == Some("ARAM") {
+        Some("aram".to_string())
+    } else if lane.is_none() {
+        Some("other".to_string())
+    } else {
+        lane
+    };
+
+    let lane_id = lane_to_id(effective_lane.as_deref());
+    let last_champ = LAST_CHAMP.load(Ordering::Relaxed);
+    let last_lane = LAST_LANE.load(Ordering::Relaxed);
+
+    if last_champ == champ_id && last_lane == lane_id {
         return;
     }
 
-    log::info!("Champion changed: {} -> {}", last, champ_id);
+    LAST_CHAMP.store(champ_id, Ordering::Relaxed);
+    LAST_LANE.store(lane_id, Ordering::Relaxed);
 
-    // フロントに通知
-    let _ = handle.emit("champion-changed",
-        serde_json::json!({ "championId": champ_id }));
+    log::info!("Champion changed: {}:{:?} -> {}:{:?} (mode={:?})", last_champ, last_lane, champ_id, effective_lane, game_mode);
 
-    // 保存済みルーンがあれば自動適用
-    if let Some(runes) = get_saved_runes(handle, champ_id) {
-        log::info!("Auto-applying runes for champion={}", champ_id);
+    let _ = handle.emit("champion-changed", serde_json::json!({
+        "championId": champ_id,
+        "lane": effective_lane,
+        "gameMode": game_mode,
+    }));
+
+    if let Some(runes) = get_saved_runes(handle, champ_id, effective_lane.as_deref()) {
+        log::info!("Auto-applying runes for champion={} lane={:?}", champ_id, effective_lane);
         match apply_champion_runes(client, &runes).await {
             Ok(_) => {
                 let _ = handle.emit("runes-applied", serde_json::json!({
                     "championId": champ_id,
                     "championName": runes.champion_name,
+                    "lane": runes.lane,
                     "pageCount": runes.pages.len(),
                 }));
             }
@@ -139,24 +188,27 @@ async fn handle_event(event: &Value, client: &LcuClient, handle: &AppHandle) {
         }
     } else {
         let _ = handle.emit("runes-not-found",
-            serde_json::json!({ "championId": champ_id }));
+            serde_json::json!({ "championId": champ_id, "lane": effective_lane }));
     }
 }
 
-fn find_champ_in_team(data: &Value, team_key: &str, cell_id: i64) -> Option<i64> {
+fn find_champ_in_team(data: &Value, team_key: &str, cell_id: i64) -> Option<(i64, Option<String>)> {
     let team = data.get(team_key)?.as_array()?;
     let entry = team.iter().find(|e| {
-        e.get("cellId")
-            .and_then(|id| id.as_i64())
-            .map(|id| id == cell_id)
-            .unwrap_or(false)
+        e.get("cellId").and_then(|id| id.as_i64()) == Some(cell_id)
     })?;
 
-    // championId が 0 より大きい場合のみ返す
-    // ホバー中は championId に値が入る
-    let champ_id = entry.get("championId")
+    let champ_id = entry.get("championPickIntent")
         .and_then(|id| id.as_i64())
+        .filter(|&id| id > 0)
+        .or_else(|| entry.get("championId").and_then(|id| id.as_i64()).filter(|&id| id > 0))
         .unwrap_or(0);
+    if champ_id <= 0 { return None; }
 
-    if champ_id > 0 { Some(champ_id) } else { None }
+    let lane = entry.get("assignedPosition")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .and_then(lcu_position_to_lane);
+
+    Some((champ_id, lane))
 }
