@@ -1,22 +1,17 @@
-﻿import { useState, useEffect, useCallback } from "react";
-import type { Champion } from "../hooks/useDataDragon";
-import type { PerkStyle, RunePage, ChampionRunes } from "../types";
+import { useState, useEffect, useCallback } from "react";
+import { useDataDragonContext } from "../contexts/DataDragonContext";
+import { useChampionContext } from "../contexts/ChampionContext";
+import type { RunePage, ChampionRunes } from "../types";
 import { RuneTreeSelector } from "./RuneTreeSelector";
 import { saveChampionRunes, getChampionRunes, deleteChampionRunes, applyRunesManually } from "../hooks/useLcu";
-
-interface Props {
-  champion: Champion | null;
-  runeStyles: PerkStyle[];
-  runeIconUrl: (p: string) => string;
-  champIconUrl: (c: Champion) => string;
-  onSaved?: () => void;
-}
 
 const blank = (): Partial<RunePage> => ({
   name: "", primaryStyleId: undefined, subStyleId: undefined, selectedPerkIds: []
 });
 
-export function RuneEditor({ champion, runeStyles, runeIconUrl, champIconUrl, onSaved }: Props) {
+export function RuneEditor() {
+  const { runeStyles, runeIconUrl, champIconUrl } = useDataDragonContext();
+  const { selectedChampion: champion, refreshSaved } = useChampionContext();
   const [tab, setTab] = useState(0);
   const [pages, setPages] = useState<Partial<RunePage>[]>([blank(), blank(), blank()]);
   const [status, setStatus] = useState<"idle"|"saving"|"saved"|"applying">("idle");
@@ -59,7 +54,7 @@ export function RuneEditor({ champion, runeStyles, runeIconUrl, champIconUrl, on
       setStatus("saved");
       flash("Saved!");
       setTimeout(() => setStatus("idle"), 2000);
-      onSaved?.();
+      refreshSaved();
     } catch (e) { flash(`Save failed: ${e}`); setStatus("idle"); }
   };
 
@@ -69,7 +64,7 @@ export function RuneEditor({ champion, runeStyles, runeIconUrl, champIconUrl, on
       await deleteChampionRunes(parseInt(champion.key));
       setPages([blank(), blank(), blank()]);
       flash("Deleted");
-      onSaved?.();
+      refreshSaved();
     } catch (e) { flash(`Delete failed: ${e}`); }
   };
 

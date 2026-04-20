@@ -1,12 +1,13 @@
-﻿import { useState, useCallback, useRef } from "react";
-import { useLcuStatus, useChampionSelectWatcher } from "../hooks/useLcu";
-import type { Champion } from "../hooks/useDataDragon";
+import { useState, useCallback, useRef } from "react";
+import { useChampionSelectWatcher } from "../hooks/useLcu";
+import { useDataDragonContext } from "../contexts/DataDragonContext";
+import { useLcuContext } from "../contexts/LcuContext";
 
 interface Toast { id: number; type: "ok"|"err"|"info"; msg: string }
-interface Props { getChampionById: (id: number) => Champion | undefined }
 
-export function StatusBar({ getChampionById }: Props) {
-  const lcu = useLcuStatus();
+export function StatusBar() {
+  const lcu = useLcuContext();
+  const { getChampionById } = useDataDragonContext();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const uid = useRef(0);
 

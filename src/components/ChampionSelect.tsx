@@ -1,17 +1,13 @@
-﻿import { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useDataDragonContext } from "../contexts/DataDragonContext";
+import { useChampionContext } from "../contexts/ChampionContext";
 import type { Champion } from "../hooks/useDataDragon";
-import type { ChampionRunes } from "../types";
 
-interface Props {
-  champions: Champion[];
-  savedRunes: ChampionRunes[];
-  champIconUrl: (c: Champion) => string;
-  selected: Champion | null;
-  onSelect: (c: Champion) => void;
-}
-
-export function ChampionSelect({ champions, savedRunes, champIconUrl, selected, onSelect }: Props) {
+export function ChampionSelect() {
+  const { champions, champIconUrl } = useDataDragonContext();
+  const { savedRunes, selectedChampion, setSelectedChampion } = useChampionContext();
   const [search, setSearch] = useState("");
+
   const savedIds = useMemo(() => new Set(savedRunes.map((r) => r.championId)), [savedRunes]);
 
   const filtered = useMemo(
@@ -38,7 +34,7 @@ export function ChampionSelect({ champions, savedRunes, champIconUrl, selected, 
           <div className="champ-grid">
             {savedChamps.map((c) => (
               <ChampCard key={c.key} champ={c} url={champIconUrl(c)}
-                selected={selected?.key === c.key} saved onClick={() => onSelect(c)} />
+                selected={selectedChampion?.key === c.key} saved onClick={() => setSelectedChampion(c)} />
             ))}
           </div>
           <div className="section-label">All Champions</div>
@@ -47,8 +43,8 @@ export function ChampionSelect({ champions, savedRunes, champIconUrl, selected, 
       <div className="champ-grid">
         {restChamps.map((c) => (
           <ChampCard key={c.key} champ={c} url={champIconUrl(c)}
-            selected={selected?.key === c.key} saved={savedIds.has(parseInt(c.key))}
-            onClick={() => onSelect(c)} />
+            selected={selectedChampion?.key === c.key} saved={savedIds.has(parseInt(c.key))}
+            onClick={() => setSelectedChampion(c)} />
         ))}
       </div>
       {filtered.length === 0 && <p className="no-results">Not found</p>}

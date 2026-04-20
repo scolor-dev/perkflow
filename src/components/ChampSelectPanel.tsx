@@ -1,16 +1,13 @@
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { applyRunesManually, getChampionRunes } from "../hooks/useLcu";
-import type { Champion } from "../hooks/useDataDragon";
+import { useDataDragonContext } from "../contexts/DataDragonContext";
+import { useLcuContext } from "../contexts/LcuContext";
 import type { ChampionRunes } from "../types";
 
-interface Props {
-  getChampionById: (id: number) => Champion | undefined;
-  champIconUrl: (c: Champion) => string;
-  lcuConnected: boolean;
-}
-
-export function ChampSelectPanel({ getChampionById, champIconUrl, lcuConnected }: Props) {
+export function ChampSelectPanel() {
+  const { getChampionById, champIconUrl } = useDataDragonContext();
+  const { connected: lcuConnected } = useLcuContext();
   const [championId, setChampionId] = useState<number | null>(null);
   const [runes, setRunes] = useState<ChampionRunes | null>(null);
   const [applying, setApplying] = useState(false);
@@ -19,38 +16,29 @@ export function ChampSelectPanel({ getChampionById, champIconUrl, lcuConnected }
 
   useEffect(() => {
     const unlistens = Promise.all([
-      // ホバー/選択でキャラが変わるたびに発火
       listen<{ championId: number }>("champion-changed", async (e) => {
         const id = e.payload.championId;
         setChampionId(id);
         setLastResult(null);
         setErrMsg("");
-
         const saved = await getChampionRunes(id).catch(() => null);
         setRunes(saved);
       }),
-
-      // キャラ未選択に戻った
       listen("champion-cleared", () => {
         setChampionId(null);
         setRunes(null);
         setLastResult(null);
       }),
-
-      // 自動適用成功
       listen("runes-applied", () => {
         setLastResult("ok");
         setApplying(false);
       }),
-
-      // 自動適用失敗
       listen<{ error: string }>("runes-error", (e) => {
         setLastResult("err");
         setErrMsg(e.payload.error);
         setApplying(false);
       }),
     ]);
-
     return () => { unlistens.then((fns) => fns.forEach((f) => f())); };
   }, []);
 
@@ -104,7 +92,6 @@ export function ChampSelectPanel({ getChampionById, champIconUrl, lcuConnected }
               : "No runes registered"}
           </div>
         </div>
-        {/* 自動適用ステータス */}
         {lastResult === "ok" && (
           <div className="cs-auto-badge ok">✓ Auto-applied</div>
         )}
