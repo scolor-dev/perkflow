@@ -112,7 +112,7 @@ pub async fn apply_runes_manually(
     let runes = get_saved_runes(&app, champion_id, lane.as_deref())
         .ok_or_else(|| format!("No runes for champion {}", champion_id))?;
     apply_champion_runes(&client, &runes).await.map_err(|e| e.to_string())?;
-    let _ = apply_champion_item_sets(&client, &runes).await;
+    apply_champion_item_sets(&client, &runes).await.map_err(|e| e.to_string())?;
     Ok(())
 }
 
