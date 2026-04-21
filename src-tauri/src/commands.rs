@@ -4,6 +4,7 @@ use serde_json::json;
 
 use crate::lcu::{
     client::LcuClient,
+    items::apply_champion_item_sets,
     runes::{apply_champion_runes, get_rune_pages, ChampionRunes, LcuRunePage},
 };
 
@@ -110,5 +111,19 @@ pub async fn apply_runes_manually(
     let client = LcuClient::from_lockfile().map_err(|e| e.to_string())?;
     let runes = get_saved_runes(&app, champion_id, lane.as_deref())
         .ok_or_else(|| format!("No runes for champion {}", champion_id))?;
-    apply_champion_runes(&client, &runes).await.map_err(|e| e.to_string())
+    apply_champion_runes(&client, &runes).await.map_err(|e| e.to_string())?;
+    apply_champion_item_sets(&client, &runes).await.map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn apply_item_sets_manually(
+    app: AppHandle,
+    champion_id: i64,
+    lane: Option<String>,
+) -> Result<(), String> {
+    let client = LcuClient::from_lockfile().map_err(|e| e.to_string())?;
+    let runes = get_saved_runes(&app, champion_id, lane.as_deref())
+        .ok_or_else(|| format!("No runes for champion {}", champion_id))?;
+    apply_champion_item_sets(&client, &runes).await.map_err(|e| e.to_string())
 }
