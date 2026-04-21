@@ -1,15 +1,17 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useDataDragon, type Champion } from "../hooks/useDataDragon";
-import type { PerkStyle } from "../types";
+import type { PerkStyle, DDItem } from "../types";
 
 interface DataDragonContextValue {
   runeStyles: PerkStyle[];
   champions: Champion[];
+  items: DDItem[];
   loading: boolean;
   error: string | null;
   getChampionById: (id: number) => Champion | undefined;
   champIconUrl: (c: Champion) => string;
   runeIconUrl: (icon: string) => string;
+  itemIconUrl: (item: DDItem) => string;
 }
 
 const DataDragonContext = createContext<DataDragonContextValue | null>(null);

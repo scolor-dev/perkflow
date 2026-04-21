@@ -1,8 +1,33 @@
-﻿export interface RunePage {
+﻿export interface ItemEntry {
+  id: number;
+  count: number;
+}
+
+export interface ItemBlock {
+  type: string;
+  items: ItemEntry[];
+}
+
+export interface ItemSet {
+  blocks: ItemBlock[];
+}
+
+export interface RunePage {
   name: string;
   primaryStyleId: number;
   subStyleId: number;
   selectedPerkIds: number[];
+  itemSet?: ItemSet;
+}
+
+export interface DDItem {
+  id: number;
+  name: string;
+  plaintext: string;
+  image: { full: string };
+  gold: { total: number; purchasable: boolean };
+  tags: string[];
+  maps: Record<string, boolean>;
 }
 
 export type Lane = "top" | "jungle" | "mid" | "bot" | "support" | "aram" | "other";

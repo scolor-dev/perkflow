@@ -109,6 +109,23 @@ impl LcuClient {
         Ok(serde_json::from_str(&text)?)
     }
 
+    pub async fn put(&self, path: &str, body: &Value) -> Result<Value, LcuError> {
+        let resp = self.client
+            .put(format!("{}{}", self.base_url(), path))
+            .header("Authorization", self.auth_header())
+            .header("Content-Type", "application/json")
+            .json(body).send().await?;
+        let status = resp.status().as_u16();
+        let text = resp.text().await?;
+        if status >= 400 {
+            return Err(LcuError::Api { status, body: text });
+        }
+        if text.is_empty() {
+            return Ok(serde_json::Value::Null);
+        }
+        Ok(serde_json::from_str(&text)?)
+    }
+
     pub async fn delete(&self, path: &str) -> Result<(), LcuError> {
         let resp = self.client
             .delete(format!("{}{}", self.base_url(), path))
