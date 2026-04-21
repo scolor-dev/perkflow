@@ -5,7 +5,6 @@ use tauri::{AppHandle, Emitter};
 use tokio_tungstenite::{connect_async_tls_with_config, tungstenite::Message, Connector};
 
 use super::client::LcuClient;
-use super::items::apply_champion_item_sets;
 use super::runes::apply_champion_runes;
 use crate::commands::get_saved_runes;
 
@@ -180,7 +179,6 @@ async fn handle_event(event: &Value, client: &LcuClient, handle: &AppHandle) {
                     "lane": runes.lane,
                     "pageCount": runes.pages.len(),
                 }));
-                let _ = apply_champion_item_sets(client, &runes).await;
             }
             Err(e) => {
                 log::error!("Failed to apply runes: {}", e);

@@ -3,24 +3,6 @@ use serde_json::json;
 use super::client::{LcuClient, LcuError};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ItemEntry {
-    pub id: i64,
-    pub count: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ItemBlock {
-    #[serde(rename = "type")]
-    pub block_type: String,
-    pub items: Vec<ItemEntry>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ItemSet {
-    pub blocks: Vec<ItemBlock>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunePage {
     pub name: String,
     #[serde(rename = "primaryStyleId")]
@@ -29,8 +11,6 @@ pub struct RunePage {
     pub sub_style_id: i64,
     #[serde(rename = "selectedPerkIds")]
     pub selected_perk_ids: Vec<i64>,
-    #[serde(rename = "itemSet", default)]
-    pub item_set: Option<ItemSet>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
