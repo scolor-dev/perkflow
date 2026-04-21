@@ -197,7 +197,7 @@ export function ItemSetEditor({ value, onChange }: Props) {
 
           {/* Item grid */}
           <div className="itemset-grid">
-            {filteredItems.slice(0, 120).map((item) => (
+            {filteredItems.map((item) => (
               <button
                 key={item.id}
                 className="itemset-item-btn"
