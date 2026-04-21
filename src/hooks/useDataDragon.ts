@@ -41,13 +41,21 @@ export function useDataDragon() {
         list.sort((a, b) => a.name.localeCompare(b.name, "ja"));
         setChampions(list);
 
+        const seen = new Set<string>();
         const itemList: DDItem[] = Object.entries(itemData.data)
           .map(([id, raw]) => ({ id: parseInt(id), ...(raw as Omit<DDItem, "id">) }))
           .filter((item) =>
             item.gold.purchasable &&
+            item.inStore !== false &&
+            !item.hideFromAll &&
             (item.maps["11"] || item.maps["12"])
           )
-          .sort((a, b) => a.gold.total - b.gold.total);
+          .sort((a, b) => a.gold.total - b.gold.total)
+          .filter((item) => {
+            if (seen.has(item.name)) return false;
+            seen.add(item.name);
+            return true;
+          });
         setItems(itemList);
       } catch (e) {
         setError(String(e));

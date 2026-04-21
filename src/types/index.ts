@@ -28,6 +28,8 @@ export interface DDItem {
   gold: { total: number; purchasable: boolean };
   tags: string[];
   maps: Record<string, boolean>;
+  inStore?: boolean;
+  hideFromAll?: boolean;
 }
 
 export type Lane = "top" | "jungle" | "mid" | "bot" | "support" | "aram" | "other";
