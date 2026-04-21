@@ -50,6 +50,3 @@ export const applyRunesManually = (championId: number, lane?: Lane | null) =>
 
 export const getCurrentRunePages = () =>
   invoke<LcuRunePage[]>("get_current_rune_pages");
-
-export const applyItemSetsManually = (championId: number, lane?: Lane | null) =>
-  invoke<void>("apply_item_sets_manually", { championId, lane: lane ?? null });

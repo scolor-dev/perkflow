@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDataDragonContext } from "../contexts/DataDragonContext";
 import { useChampionContext } from "../contexts/ChampionContext";
-import type { RunePage, ChampionRunes, ItemSet } from "../types";
+import type { RunePage, ChampionRunes } from "../types";
 import { RuneTreeSelector } from "./RuneTreeSelector";
 import { RuneSharePanel } from "./RuneSharePanel";
-import { ItemSetEditor } from "./ItemSetEditor";
 import { LaneSelect } from "./LaneSelect";
 import { saveChampionRunes, getChampionRunes, deleteChampionRunes, applyRunesManually } from "../hooks/useLcu";
 
@@ -147,10 +146,6 @@ export function RuneEditor() {
           </div>
           <RuneTreeSelector runeStyles={runeStyles} runeIconUrl={runeIconUrl}
             value={cur} onChange={(p) => updatePage(tab, p)} />
-          <ItemSetEditor
-            value={cur.itemSet}
-            onChange={(set: ItemSet | undefined) => updatePage(tab, { ...cur, itemSet: set })}
-          />
           <RuneSharePanel
             currentPage={cur}
             onImport={(p) => updatePage(tab, { ...cur, ...p })}

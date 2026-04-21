@@ -20,7 +20,6 @@ pub fn run() {
             commands::get_all_champion_runes,
             commands::delete_champion_runes,
             commands::apply_runes_manually,
-            commands::apply_item_sets_manually,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
